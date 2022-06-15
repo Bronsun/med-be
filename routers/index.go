@@ -14,4 +14,6 @@ func RegisterRoutes(route *gin.Engine) {
 
 	//Add All route
 	//TestRoutes(route)
+
+	ClinicRoutes(route)
 }

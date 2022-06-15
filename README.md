@@ -73,7 +73,7 @@ REPLICA_SSL_MODE=disable
 ### Installation
 #### Local Setup Instruction
 Follow these steps:
-- Copy [.env.example](.env.example) as `.env` and configure necessary values
+- Copy [.env.example](.env) as `.env` and configure necessary values
 - To add all dependencies for a package in your module `go get .` in the current directory
 - Locally run `go run main.go` or `go build main.go` and run `./main`
 - Check Application health available on [0.0.0.0:8000/health](http://0.0.0.0:8000/health)
