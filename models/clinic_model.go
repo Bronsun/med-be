@@ -1,18 +1,18 @@
 package models
 
 import (
-	uuid "github.com/satori/go.uuid"
 	"time"
+
+	uuid "github.com/google/uuid"
 )
 
 // Clinic model structure
 type Clinic struct {
-	ID                  uuid.UUID `json:"id" sql:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	NfzID               string    `json:"nfz_id"`
+	ID                  uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4();uniqueIndex"`
 	PrivateName         string    `json:"private_name"`
-	ProviderCode        string    `json:"provider-code"`
-	Regon               string    `json:"regon"`
-	Nip                 string    `json:"nip"`
+	ProviderCode        string    `json:"provider_code"`
+	Regon               string    `json:"regon" gorm:"uniqueIndex"`
+	Nip                 string    `json:"nip" gorm:"uniqueIndex"`
 	NfzName             string    `json:"nfz_name"`
 	Address             string    `json:"address"`
 	City                string    `json:"city"`
@@ -27,14 +27,16 @@ type Clinic struct {
 	Elevator            bool      `json:"elevator"`
 	Latitude            float32   `json:"latitude"`
 	Longitude           float32   `json:"longitude"`
+	CreatedAt           time.Time `json:"created_at"`
 	Benefits            []ClinicBenefit
 }
 
 // Benefit model is model that contains all valid benefits for patients
 type Benefit struct {
-	ID      uuid.UUID `json:"id" sql:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	Name    string    `json:"name"`
-	Clinics []ClinicBenefit
+	ID        uuid.UUID `json:"id"  gorm:"type:uuid;primary_key;default:uuid_generate_v4();uniqueIndex"`
+	Name      string    `json:"name" gorm:"uniqueIndex"`
+	CreatedAt time.Time `json:"created_at"`
+	Clinics   []ClinicBenefit
 }
 
 // ClinicBenefit model is model that conatians statistic Many-to-many
@@ -42,12 +44,12 @@ type ClinicBenefit struct {
 	BenefitID     uuid.UUID
 	Benefit       Benefit `gorm:"foreignKey:BenefitID;references:ID"`
 	ClinicID      uuid.UUID
-	Clinic        Clinic     `gorm:"foreignKey:ClinicID;rreferences:ID"`
-	Awaiting      int        `json:"awaiting"`
-	Removed       int        `json:"removed"`
-	AveragePeriod int        `json:"average_period"`
-	VisitDate     *time.Time `json:"visit_date"`
-	DateUpdatedAt *time.Time `json:"date_updated_at"`
+	Clinic        Clinic `gorm:"foreignKey:ClinicID;references:ID"`
+	Awaiting      int    `json:"awaiting"`
+	Removed       int    `json:"removed"`
+	AveragePeriod int    `json:"average_period"`
+	VisitDate     string `json:"visit_date"`
+	DateUpdatedAt string `json:"date_updated_at"`
 }
 
 // ClinicName returns DB table name

@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=${MASTER_DB_PASSWORD}
       - POSTGRES_DB=${MASTER_DB_NAME}
     volumes:
-      - dev_postgres_data:/var/lib/postgresql/data/
+      - ./database/postgres/docker-entrypoint-initdb:/docker-entrypoint-initdb.d/
     restart: always
 
   pgadmin:

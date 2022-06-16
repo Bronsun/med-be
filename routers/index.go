@@ -1,8 +1,9 @@
 package routers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 //RegisterRoutes add all routing list here automatically get main router
@@ -15,5 +16,5 @@ func RegisterRoutes(route *gin.Engine) {
 	//Add All route
 	//TestRoutes(route)
 
-	ClinicRoutes(route)
+	NFZRoutes(route)
 }
