@@ -1,7 +1,10 @@
 package converter
 
-import "gin-boilerplate/pkg/helpers"
+import (
+	"gin-boilerplate/pkg/helpers"
+)
 
+// BoolConverter converts Y and N to bool statetment
 func BoolConverter(pseudoBool string) bool {
 	if pseudoBool == "Y" || pseudoBool == "y" {
 		return true
@@ -11,9 +14,9 @@ func BoolConverter(pseudoBool string) bool {
 	}
 
 	return false
-
 }
 
+// VoivodeshipConverter map voivodeships to
 func VoivodeshipConverter(province string) string {
 	for key, value := range helpers.Voievodship {
 		if province == value {

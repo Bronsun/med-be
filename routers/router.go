@@ -2,10 +2,12 @@ package routers
 
 import (
 	"gin-boilerplate/routers/middleware"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
+// SetupRoute setups gin Engine
 func SetupRoute() *gin.Engine {
 
 	environment := viper.GetBool("DEBUG")

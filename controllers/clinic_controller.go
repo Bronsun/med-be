@@ -12,11 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
+// ClinicController struct
 type ClinicController struct {
-	//rep repository.Repository
 	DB *gorm.DB
 }
 
+// Response for clinic search
 type Response struct {
 	ID                  string  `json:"id"`
 	PrivateName         string  `json:"private_name"`
@@ -37,6 +38,10 @@ type Response struct {
 	VisitDate           string  `json:"visit_date"`
 }
 
+// SelectResponse for selects
+var SelectResponse []string
+
+// GetClinics gets search results
 func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
 	//page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
@@ -60,9 +65,7 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 	sql, err := c.buildSQL(query)
 	if err != nil {
 		ctx.JSON(http.StatusOK, helpers.Response{
-			Code:    404,
-			Message: "Resource not found",
-			Data:    sql,
+			Data: sql,
 		})
 		return
 	}
@@ -70,12 +73,53 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 	c.DB.Raw(sql).Scan(&result)
 
 	ctx.JSON(http.StatusOK, helpers.Response{
-		Code:    200,
-		Message: "Succesfull added and updated",
-		Data:    result,
+		Data: result,
 	})
 	return
 
+}
+
+// GetBenefits gets all benefits avaiable from NFZ (limit 20)
+func (c *ClinicController) GetBenefits(ctx *gin.Context) {
+	benefitName := strings.ToUpper(ctx.Query("name"))
+
+	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&SelectResponse)
+	ctx.JSON(http.StatusOK, helpers.Response{
+		Data: SelectResponse,
+	})
+
+}
+
+// GetCity gets all city's names from NFZ (limit 20)
+func (c *ClinicController) GetCity(ctx *gin.Context) {
+	cityName := strings.ToUpper(ctx.Query("name"))
+
+	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&SelectResponse)
+	ctx.JSON(http.StatusOK, helpers.Response{
+		Data: SelectResponse,
+	})
+}
+
+// GetPrivateName gets all privateNames (limit 20)
+func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
+	privateName := strings.ToUpper(ctx.Query("name"))
+
+	c.DB.Table("clinics").Select([]string{"private_name"}).Where("private_name LIKE ?", privateName).Limit(20).Find(&SelectResponse)
+	ctx.JSON(http.StatusOK, helpers.Response{
+
+		Data: SelectResponse,
+	})
+}
+
+// GetStreet gets all streets from NFZ (limit 20)
+func (c *ClinicController) GetStreet(ctx *gin.Context) {
+	streetName := strings.ToUpper(ctx.Query("name"))
+
+	c.DB.Table("clinics").Select([]string{"street"}).Where("street LIKE ?", helpers.LikeStatement(streetName)).Limit(20).Find(&SelectResponse)
+	ctx.JSON(http.StatusOK, helpers.Response{
+
+		Data: SelectResponse,
+	})
 }
 
 func (c *ClinicController) buildSQL(query map[string]string) (string, error) {
@@ -122,26 +166,5 @@ func (c *ClinicController) buildSQL(query map[string]string) (string, error) {
 		}
 		whereClause = strings.Join(q, ` AND `)
 	}
-
 	return fullSQL, nil
-
-}
-
-func (c *ClinicController) PrivateNameLike(value string) *gorm.DB {
-	return c.DB.Where("private_name LIKE ?", value)
-}
-func (c *ClinicController) AddressLike(value string) *gorm.DB {
-	return c.DB.Where("address LIKE ?", value)
-}
-func (c *ClinicController) VoivodeshipLike(value string) *gorm.DB {
-	return c.DB.Where("voivodeship LIKE ?", value)
-}
-func (c *ClinicController) CityLike(value string) *gorm.DB {
-	return c.DB.Where("city LIKE ?", value)
-}
-func (c *ClinicController) IsChildren(value string) *gorm.DB {
-	if value == "" {
-		value = "false"
-	}
-	return c.DB.Where("benefits_for_children = ?", value)
 }

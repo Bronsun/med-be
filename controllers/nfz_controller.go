@@ -38,9 +38,8 @@ func (c *NFZController) SaveNFZClinics(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, helpers.Response{
-		Code:    200,
-		Message: "Succesfull added and updated",
-		Data:    resp,
+
+		Data: resp,
 	})
 
 }
