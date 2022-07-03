@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"errors"
 	"fmt"
 	"gin-boilerplate/models"
 	"gin-boilerplate/pkg/helpers"
+	"gin-boilerplate/pkg/helpers/pagination"
 	http "net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -44,39 +45,61 @@ var SelectResponse []string
 // GetClinics gets search results
 func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
-	//page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	//limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "25"))
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limitQuery, _ := strconv.Atoi(ctx.DefaultQuery("limit", "25"))
 	benefit := ctx.Query("benefit")
-	city := ctx.Query("city") + "%"
+	city := ctx.Query("city")
 	address := ctx.Query("address")
 	voivodeship := ctx.Query("voivodeship")
-	children := ctx.Query("children")
+	children := ctx.Query("benefits_for_children")
 	private_name := ctx.Query("private_name")
+
+	offset, limit := pagination.BuildPaginationQuery(int64(page), int64(limitQuery))
+
+	var benefits models.Benefit
 	var result []Response
+
 	var query = map[string]string{
-		"benefit":      benefit,
-		"city":         city + "%",
-		"address":      address + "%",
-		"voivodeship":  voivodeship + "%",
-		"children":     children,
-		"private_name": private_name + "%",
+		"city":         city,
+		"address":      address,
+		"voivodeship":  voivodeship,
+		"private_name": private_name,
+	}
+	values, where, whereBenefit := helpers.DynamicWhereLikeBuilder(query, "clinics")
+
+	if children == "true" {
+		where = append(where, "benefits_for_children = true")
+		whereBenefit = append(where, "clinics.benefits_for_children = true")
 	}
 
-	sql, err := c.buildSQL(query)
-	if err != nil {
-		ctx.JSON(http.StatusOK, helpers.Response{
-			Data: sql,
-		})
-		return
+	if where == nil && benefit == "" && children == "" {
+		c.DB.Raw("SELECT * FROM clinics LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
 	}
 
-	c.DB.Raw(sql).Scan(&result)
+	if benefit != "" {
+		rows := c.DB.Select("id,name").Where("name = ?", benefit).First(&benefits).RowsAffected
+		if rows == 0 {
+			ctx.JSON(http.StatusOK, helpers.Response{
+				Code:    404,
+				Message: "No benefit found with this name",
+				Data:    result,
+			})
+			return
+		}
+		bID := fmt.Sprintf("'%s'", benefits.ID)
+
+		c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+strings.Join(whereBenefit, " AND "), values...).Scan(&result)
+
+	} else {
+		c.DB.Raw("SELECT * FROM clinics WHERE "+strings.Join(where, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
+	}
 
 	ctx.JSON(http.StatusOK, helpers.Response{
-		Data: result,
+		Code:    200,
+		Message: "Success ",
+		Data:    result,
 	})
 	return
-
 }
 
 // GetBenefits gets all benefits avaiable from NFZ (limit 20)
@@ -85,8 +108,11 @@ func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 
 	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
-		Data: SelectResponse,
+		Code:    200,
+		Message: "Benefits rertived successfully",
+		Data:    SelectResponse,
 	})
+	return
 
 }
 
@@ -96,8 +122,11 @@ func (c *ClinicController) GetCity(ctx *gin.Context) {
 
 	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
-		Data: SelectResponse,
+		Code:    200,
+		Message: "City retrived successfully",
+		Data:    SelectResponse,
 	})
+	return
 }
 
 // GetPrivateName gets all privateNames (limit 20)
@@ -106,65 +135,22 @@ func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
 
 	c.DB.Table("clinics").Select([]string{"private_name"}).Where("private_name LIKE ?", privateName).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
-
-		Data: SelectResponse,
+		Code:    200,
+		Message: "Private name rertived successfully",
+		Data:    SelectResponse,
 	})
+	return
 }
 
 // GetStreet gets all streets from NFZ (limit 20)
-func (c *ClinicController) GetStreet(ctx *gin.Context) {
-	streetName := strings.ToUpper(ctx.Query("name"))
+func (c *ClinicController) GetAddress(ctx *gin.Context) {
+	addressName := strings.ToUpper(ctx.Query("name"))
 
-	c.DB.Table("clinics").Select([]string{"street"}).Where("street LIKE ?", helpers.LikeStatement(streetName)).Limit(20).Find(&SelectResponse)
+	c.DB.Table("clinics").Select([]string{"address"}).Where("address LIKE ?", helpers.LikeStatement(addressName)).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
-
-		Data: SelectResponse,
+		Code:    200,
+		Message: "Address rertived successfully",
+		Data:    SelectResponse,
 	})
-}
-
-func (c *ClinicController) buildSQL(query map[string]string) (string, error) {
-	var benefits models.Benefit
-	var q []string
-	var benefitq []string
-	var whereClause string
-	var fullSQL string
-	var customWhereClause string
-	var customBenefitWhereClause string
-	var beginSQL string
-
-	fullSQL = "SELECT * FROM clinics WHERE " + whereClause
-	for key, value := range query {
-
-		if value != "" && key != "benefit" {
-			customWhereClause = fmt.Sprintf("%s LIKE '%s'", key, value)
-
-			if key == "children" {
-				customWhereClause = fmt.Sprintf("%s = '%s'", "benefits_for_children", value)
-			}
-
-			q = append(q, customWhereClause)
-
-		}
-		if key == "benefit" {
-			rows := c.DB.Select("id,name").Where("name = ?", query["benefit"]).First(&benefits).RowsAffected
-			if rows == 0 {
-				err := errors.New("Benefit not found")
-				return "", err
-			}
-			beginSQL = fmt.Sprintf("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = '%s' AND ", benefits.ID)
-			if value != "" {
-				customBenefitWhereClause = fmt.Sprintf("%s LIKE '%s'", key, value)
-
-				if key == "children" {
-					customBenefitWhereClause = fmt.Sprintf("%s = '%s'", "benefits_for_children", value)
-				}
-
-				benefitq = append(benefitq, customBenefitWhereClause)
-			}
-			whereClause = strings.Join(benefitq, ` AND `)
-			fullSQL = beginSQL + whereClause
-		}
-		whereClause = strings.Join(q, ` AND `)
-	}
-	return fullSQL, nil
+	return
 }

@@ -2,8 +2,9 @@ package pagination
 
 import (
 	"gin-boilerplate/pkg/database"
-	"gorm.io/gorm"
 	"math"
+
+	"gorm.io/gorm"
 )
 
 type Param struct {
@@ -24,15 +25,31 @@ type Result struct {
 	Data        interface{} `json:"data"`
 }
 
+func BuildPaginationQuery(page, limit int64) (int64, int64) {
+	var offset int64
+
+	if page < 1 {
+		page = 1
+	}
+
+	if limit == 0 {
+		limit = 25
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	if page == 1 {
+		offset = 0
+	} else {
+		offset = (page - 1) * limit
+	}
+
+	return offset, limit
+}
+
 func Paginate(param *Param, resultData interface{}) *Result {
 	db := database.GetDB()
-
-	if param.Page < 1 {
-		param.Page = 1
-	}
-	if param.Limit == 0 {
-		param.Limit = 10
-	}
 
 	done := make(chan bool, 1)
 	var result Result

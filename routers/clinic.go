@@ -19,7 +19,7 @@ func ClinicRoutes(route *gin.Engine) {
 	search := route.Group("/search/")
 	search.GET("/benefit", ctrl.GetBenefits)
 	search.GET("/city", ctrl.GetCity)
-	search.GET("/street", ctrl.GetStreet)
+	search.GET("/address", ctrl.GetAddress)
 	search.GET("/privateName", ctrl.GetPrivateName)
 
 }
