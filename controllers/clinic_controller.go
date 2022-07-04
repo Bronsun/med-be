@@ -18,46 +18,26 @@ type ClinicController struct {
 	DB *gorm.DB
 }
 
-// Response for clinic search
-type Response struct {
-	ID                  string  `json:"id"`
-	PrivateName         string  `json:"private_name"`
-	NfzName             string  `json:"nfz_name"`
-	Address             string  `json:"address"`
-	City                string  `json:"city"`
-	Voivodeship         string  `json:"voivodeship"`
-	Phone               string  `json:"phone"`
-	RegistryNumber      string  `json:"registry_number"`
-	BenefitsForChildren bool    `json:"benefits_for_children"`
-	Covid19             bool    `json:"covid-19"`
-	Toilet              bool    `json:"toilet"`
-	Ramp                bool    `json:"ramp"`
-	CarPark             bool    `json:"car_park"`
-	Elevator            bool    `json:"elevator"`
-	Latitude            float32 `json:"latitude"`
-	Longitude           float32 `json:"longitude"`
-	VisitDate           string  `json:"visit_date"`
-}
-
 // SelectResponse for selects
 var SelectResponse []string
 
 // GetClinics gets search results
 func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
-	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	limitQuery, _ := strconv.Atoi(ctx.DefaultQuery("limit", "25"))
-	benefit := ctx.Query("benefit")
-	city := ctx.Query("city")
-	address := ctx.Query("address")
-	voivodeship := ctx.Query("voivodeship")
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	limitQuery, _ := strconv.Atoi(ctx.Query("limit"))
+	benefit := strings.ToUpper(ctx.Query("benefit"))
+	city := strings.ToUpper(ctx.Query("city"))
+	address := strings.ToUpper(ctx.Query("address"))
+	voivodeship := strings.ToUpper(ctx.Query("voivodeship"))
 	children := ctx.Query("benefits_for_children")
-	private_name := ctx.Query("private_name")
+	private_name := strings.ToUpper(ctx.Query("private_name"))
 
 	offset, limit := pagination.BuildPaginationQuery(int64(page), int64(limitQuery))
 
 	var benefits models.Benefit
-	var result []Response
+	var result []helpers.ClinicInfoResponse
+	var paginationResponse *pagination.Result
 
 	var query = map[string]string{
 		"city":         city,
@@ -74,6 +54,8 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
 	if where == nil && benefit == "" && children == "" {
 		c.DB.Raw("SELECT * FROM clinics LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
+		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset}, "clinicsAll", result)
+
 	}
 
 	if benefit != "" {
@@ -86,18 +68,26 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 			})
 			return
 		}
-		bID := fmt.Sprintf("'%s'", benefits.ID)
 
-		c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+strings.Join(whereBenefit, " AND "), values...).Scan(&result)
+		bID := fmt.Sprintf("'%s'", benefits.ID)
+		if whereBenefit != nil {
+			c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+" AND "+strings.Join(whereBenefit, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
+			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: whereBenefit, BenefitID: bID}, "clinicsBenefits", result)
+		} else {
+			c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = " + bID + " LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
+			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, BenefitID: bID}, "clinicsBenefits", result)
+		}
 
 	} else {
 		c.DB.Raw("SELECT * FROM clinics WHERE "+strings.Join(where, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
+		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: where}, "clinicsWithWhere", result)
+
 	}
 
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
-		Message: "Success ",
-		Data:    result,
+		Message: "Success",
+		Data:    paginationResponse,
 	})
 	return
 }
