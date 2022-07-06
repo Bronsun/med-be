@@ -20,7 +20,7 @@ type Clinic struct {
 	Phone               string    `json:"phone"`
 	RegistryNumber      string    `json:"registry_number"`
 	BenefitsForChildren bool      `json:"benefits_for_children"`
-	Covid19             bool      `json:"covid-19"`
+	Covid19             bool      `json:"covid_19"`
 	Toilet              bool      `json:"toilet"`
 	Ramp                bool      `json:"ramp"`
 	CarPark             bool      `json:"car_park"`
