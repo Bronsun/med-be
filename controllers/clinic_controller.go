@@ -52,7 +52,7 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 		whereBenefit = append(where, "clinics.benefits_for_children = true")
 	}
 
-	if where == nil && benefit == "" && children == "" {
+	if where == nil && benefit == "" && (children == "" || children == "false") {
 		c.DB.Raw("SELECT * FROM clinics LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
 		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset}, "clinicsAll", result)
 
@@ -78,7 +78,8 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, BenefitID: bID}, "clinicsBenefits", result)
 		}
 
-	} else {
+	}
+	if where != nil {
 		c.DB.Raw("SELECT * FROM clinics WHERE "+strings.Join(where, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
 		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: where}, "clinicsWithWhere", result)
 

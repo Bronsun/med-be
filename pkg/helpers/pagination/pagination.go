@@ -70,7 +70,6 @@ func PaginationResponseBuilder(db *gorm.DB, param Param, counter string, resultD
 	}
 
 	<-done
-
 	result.TotalRecord = count
 	result.Data = resultData
 	result.Page = param.Page
@@ -105,7 +104,6 @@ func countClinicsWithDynamicWhereClause(db *gorm.DB, done chan bool, values []in
 }
 
 func countClinicsBenefitsWithDynamicWhereClause(db *gorm.DB, done chan bool, bID string, values []interface{}, where []string, count *int64) {
-	fmt.Println(where)
 	if where != nil {
 		db.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+" AND "+strings.Join(where, " AND "), values...).Count(count)
 		done <- true
