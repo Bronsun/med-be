@@ -2,6 +2,7 @@ package converter
 
 import (
 	"gin-boilerplate/pkg/helpers"
+	"strings"
 )
 
 // BoolConverter converts Y and N to bool statetment
@@ -24,4 +25,8 @@ func VoivodeshipConverter(province string) string {
 		}
 	}
 	return ""
+}
+
+func CapitalLettersConverter(s string) string {
+	return strings.Title(strings.ToLower(s))
 }

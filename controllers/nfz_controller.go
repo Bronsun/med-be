@@ -38,7 +38,6 @@ func (c *NFZController) SaveNFZClinics(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, helpers.Response{
-
 		Data: resp,
 	})
 
@@ -77,15 +76,16 @@ func (c *NFZController) saveNFZData(endpoint string, province string) (int64, er
 
 func (c *NFZController) saveToDB(resp *external_response.NFZResponse, province string) (int64, error) {
 	var results int64
+
 	for _, data := range resp.Data {
 
 		clinics := models.Clinic{
-			PrivateName:         data.Attributes.Provider,
+			PrivateName:         converter.CapitalLettersConverter(data.Attributes.Provider),
 			ProviderCode:        data.Attributes.ProviderCode,
 			Regon:               data.Attributes.RegonProvider,
 			Nip:                 data.Attributes.NipProvider,
-			NfzName:             data.Attributes.Place,
-			Address:             data.Attributes.Address,
+			NfzName:             converter.CapitalLettersConverter(data.Attributes.Place),
+			Address:             converter.CapitalLettersConverter(data.Attributes.Address),
 			City:                data.Attributes.Locality,
 			Voivodeship:         converter.VoivodeshipConverter(province),
 			Phone:               data.Attributes.Phone,
