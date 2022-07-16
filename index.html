@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    </head>
+<body>
+    <script>
+
+     const BASE_URL = "http://localhost:8000"
+
+const GetCode = async() =>{
+  try{
+    const response = await axios.get(`${BASE_URL}/search/benefit?name=POR`);
+    const items = response.data;
+    console.log(items)
+   
+  }catch (errors){
+    console.error(errors);
+  }
+}
+    </script>
+
+    <button onclick="GetCode()">XD</button>
+
+</body>
+</html>

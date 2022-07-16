@@ -19,7 +19,9 @@ type ClinicController struct {
 }
 
 // SelectResponse for selects
-var SelectResponse []string
+type SelectResponse struct {
+	Name string `json: "name"`
+}
 
 // GetClinics gets search results
 func (c *ClinicController) GetClinics(ctx *gin.Context) {
@@ -61,7 +63,7 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 	if benefit != "" {
 		rows := c.DB.Select("id,name").Where("name = ?", benefit).First(&benefits).RowsAffected
 		if rows == 0 {
-			ctx.JSON(http.StatusOK, helpers.Response{
+			ctx.JSON(http.StatusNotFound, helpers.Response{
 				Code:    404,
 				Message: "No benefit found with this name",
 				Data:    result,
@@ -96,12 +98,12 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 // GetBenefits gets all benefits avaiable from NFZ (limit 20)
 func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 	benefitName := strings.ToUpper(ctx.Query("name"))
-
-	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&SelectResponse)
+	var xd []SelectResponse
+	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&xd)
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Benefits rertived successfully",
-		Data:    SelectResponse,
+		Data:    xd,
 	})
 	return
 
@@ -110,7 +112,7 @@ func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 // GetCity gets all city's names from NFZ (limit 20)
 func (c *ClinicController) GetCity(ctx *gin.Context) {
 	cityName := strings.ToUpper(ctx.Query("name"))
-
+	var SelectResponse []SelectResponse
 	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
@@ -123,7 +125,7 @@ func (c *ClinicController) GetCity(ctx *gin.Context) {
 // GetPrivateName gets all privateNames (limit 20)
 func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
 	privateName := strings.ToUpper(ctx.Query("name"))
-
+	var SelectResponse []SelectResponse
 	c.DB.Table("clinics").Select([]string{"private_name"}).Where("private_name LIKE ?", privateName).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
@@ -136,7 +138,7 @@ func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
 // GetStreet gets all streets from NFZ (limit 20)
 func (c *ClinicController) GetAddress(ctx *gin.Context) {
 	addressName := strings.ToUpper(ctx.Query("name"))
-
+	var SelectResponse []SelectResponse
 	c.DB.Table("clinics").Select([]string{"address"}).Where("address LIKE ?", helpers.LikeStatement(addressName)).Limit(20).Find(&SelectResponse)
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
