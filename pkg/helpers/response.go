@@ -12,6 +12,9 @@ type Response struct {
 type ClinicInfoResponse struct {
 	ID                  string  `json:"id"`
 	PrivateName         string  `json:"private_name"`
+	ProviderCode        string  `json:"provider_code"`
+	Regon               string  `json:"regon" gorm:"uniqueIndex"`
+	Nip                 string  `json:"nip" gorm:"uniqueIndex"`
 	NfzName             string  `json:"nfz_name"`
 	Address             string  `json:"address"`
 	City                string  `json:"city"`
@@ -19,7 +22,7 @@ type ClinicInfoResponse struct {
 	Phone               string  `json:"phone"`
 	RegistryNumber      string  `json:"registry_number"`
 	BenefitsForChildren bool    `json:"benefits_for_children"`
-	Covid19             bool    `json:"covid-19"`
+	Covid19             bool    `json:"covid_19"`
 	Toilet              bool    `json:"toilet"`
 	Ramp                bool    `json:"ramp"`
 	CarPark             bool    `json:"car_park"`
