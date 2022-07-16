@@ -1,5 +1,7 @@
 package helpers
 
+import "gin-boilerplate/models"
+
 type Response struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
@@ -24,5 +26,19 @@ type ClinicInfoResponse struct {
 	Elevator            bool    `json:"elevator"`
 	Latitude            float32 `json:"latitude"`
 	Longitude           float32 `json:"longitude"`
+	AveragePeriod       int     `json:"average_period"`
+	Awaiting            int     `json:"awaiting"`
 	VisitDate           string  `json:"visit_date"`
+}
+
+type ClinicResponse struct {
+	ClinicInfo models.Clinic     `json:"clinic_info"`
+	Benefits   []BenefitResponse `json:"clinic_benefits"`
+}
+
+type BenefitResponse struct {
+	Name          string `json:"name"`
+	AveragePeriod int    `json:"average_period"`
+	Awaiting      int    `json:"awaiting"`
+	VisitDate     string `json:"visit_date"`
 }

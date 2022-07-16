@@ -8,27 +8,27 @@ import (
 
 // Clinic model structure
 type Clinic struct {
-	ID                  uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4();uniqueIndex"`
-	PrivateName         string    `json:"private_name"`
-	ProviderCode        string    `json:"provider_code"`
-	Regon               string    `json:"regon" gorm:"uniqueIndex"`
-	Nip                 string    `json:"nip" gorm:"uniqueIndex"`
-	NfzName             string    `json:"nfz_name"`
-	Address             string    `json:"address"`
-	City                string    `json:"city"`
-	Voivodeship         string    `json:"voivodeship"`
-	Phone               string    `json:"phone"`
-	RegistryNumber      string    `json:"registry_number"`
-	BenefitsForChildren bool      `json:"benefits_for_children"`
-	Covid19             bool      `json:"covid_19"`
-	Toilet              bool      `json:"toilet"`
-	Ramp                bool      `json:"ramp"`
-	CarPark             bool      `json:"car_park"`
-	Elevator            bool      `json:"elevator"`
-	Latitude            float32   `json:"latitude"`
-	Longitude           float32   `json:"longitude"`
-	CreatedAt           time.Time `json:"created_at"`
-	Benefits            []ClinicBenefit
+	ID                  uuid.UUID       `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4();uniqueIndex"`
+	PrivateName         string          `json:"private_name"`
+	ProviderCode        string          `json:"provider_code"`
+	Regon               string          `json:"regon" gorm:"uniqueIndex"`
+	Nip                 string          `json:"nip" gorm:"uniqueIndex"`
+	NfzName             string          `json:"nfz_name"`
+	Address             string          `json:"address"`
+	City                string          `json:"city"`
+	Voivodeship         string          `json:"voivodeship"`
+	Phone               string          `json:"phone"`
+	RegistryNumber      string          `json:"registry_number"`
+	BenefitsForChildren bool            `json:"benefits_for_children"`
+	Covid19             bool            `json:"covid_19"`
+	Toilet              bool            `json:"toilet"`
+	Ramp                bool            `json:"ramp"`
+	CarPark             bool            `json:"car_park"`
+	Elevator            bool            `json:"elevator"`
+	Latitude            float32         `json:"latitude"`
+	Longitude           float32         `json:"longitude"`
+	CreatedAt           time.Time       `json:"created_at"`
+	Benefits            []ClinicBenefit `json:",omitempty"`
 }
 
 // Benefit model is model that contains all valid benefits for patients

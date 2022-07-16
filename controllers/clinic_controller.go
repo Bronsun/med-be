@@ -73,10 +73,10 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
 		bID := fmt.Sprintf("'%s'", benefits.ID)
 		if whereBenefit != nil {
-			c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+" AND "+strings.Join(whereBenefit, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
+			c.DB.Raw("SELECT clinics.*, clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+" AND "+strings.Join(whereBenefit, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
 			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: whereBenefit, BenefitID: bID}, "clinicsBenefits", result)
 		} else {
-			c.DB.Raw("SELECT clinics.*, clinic_benefits.visit_date FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = " + bID + " LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
+			c.DB.Raw("SELECT clinics.*, clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = " + bID + " LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
 			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, BenefitID: bID}, "clinicsBenefits", result)
 		}
 
@@ -95,15 +95,38 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 	return
 }
 
+// GetClinic gets data for exac clinic
+func (c *ClinicController) GetClinic(ctx *gin.Context) {
+	id := ctx.Param("id")
+	var clinic models.Clinic
+	var clinicsbenefits []helpers.BenefitResponse
+
+	c.DB.Table("clinics").Where("id = ?", id).Scan(&clinic)
+	c.DB.Raw("SELECT benefits.name, clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM benefits FULL OUTER JOIN clinic_benefits on clinic_benefits.benefit_id = benefits.id WHERE clinic_benefits.clinic_id = " + "'" + id + "'").Scan(&clinicsbenefits)
+
+	result := helpers.ClinicResponse{
+		ClinicInfo: clinic,
+		Benefits:   clinicsbenefits,
+	}
+
+	ctx.JSON(http.StatusOK, helpers.Response{
+		Code:    200,
+		Message: "Clinic retrived succesfull",
+		Data:    result,
+	})
+	return
+
+}
+
 // GetBenefits gets all benefits avaiable from NFZ (limit 20)
 func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 	benefitName := strings.ToUpper(ctx.Query("name"))
-	var xd []SelectResponse
-	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&xd)
+	var result []SelectResponse
+	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&result)
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Benefits rertived successfully",
-		Data:    xd,
+		Data:    result,
 	})
 	return
 

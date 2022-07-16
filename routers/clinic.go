@@ -14,6 +14,7 @@ func ClinicRoutes(route *gin.Engine) {
 	// Main search handler
 	main := route.Group("/clinic/")
 	main.GET("/", ctrl.GetClinics)
+	main.GET("/:id", ctrl.GetClinic)
 
 	// Select fields search
 	search := route.Group("/search/")
