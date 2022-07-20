@@ -31,7 +31,7 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 	benefit := strings.ToUpper(ctx.Query("benefit"))
 	city := strings.ToUpper(ctx.Query("city"))
 	address := strings.ToUpper(ctx.Query("address"))
-	voivodeship := strings.ToUpper(ctx.Query("voivodeship"))
+	voivodeship := ctx.Query("voivodeship")
 	children := ctx.Query("benefits_for_children")
 	private_name := strings.ToUpper(ctx.Query("private_name"))
 
@@ -48,6 +48,9 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 		"private_name": private_name,
 	}
 	values, where, whereBenefit := helpers.DynamicWhereLikeBuilder(query, "clinics")
+
+	fmt.Println(where)
+	fmt.Println(values...)
 
 	if children == "true" {
 		where = append(where, "benefits_for_children = true")
@@ -142,7 +145,7 @@ func (c *ClinicController) GetCity(ctx *gin.Context) {
 	var names []string
 	var result []SelectResponse
 
-	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&names)
+	c.DB.Table("clinics").Distinct([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&names)
 	for _, v := range names {
 		result = append(result, SelectResponse{Value: v})
 	}

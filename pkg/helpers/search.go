@@ -4,7 +4,7 @@ import "fmt"
 
 // LikeStatement adds % to search clause
 func LikeStatement(search string) string {
-	return search + "_%"
+	return search + "%"
 }
 
 // DynamicWhereBuilder builds dynamic where clause for search using queries
