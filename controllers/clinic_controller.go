@@ -18,9 +18,9 @@ type ClinicController struct {
 	DB *gorm.DB
 }
 
-// SelectResponse for selects
+// BenefitResponse for selects
 type SelectResponse struct {
-	Name string `json: "name"`
+	Value string `json:"value"`
 }
 
 // GetClinics gets search results
@@ -108,7 +108,6 @@ func (c *ClinicController) GetClinic(ctx *gin.Context) {
 		ClinicInfo: clinic,
 		Benefits:   clinicsbenefits,
 	}
-
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Clinic retrived succesfull",
@@ -121,8 +120,13 @@ func (c *ClinicController) GetClinic(ctx *gin.Context) {
 // GetBenefits gets all benefits avaiable from NFZ (limit 20)
 func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 	benefitName := strings.ToUpper(ctx.Query("name"))
+	var names []string
 	var result []SelectResponse
-	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&result)
+
+	c.DB.Table("benefits").Select([]string{"name"}).Where("name LIKE ?", helpers.LikeStatement(benefitName)).Limit(20).Find(&names)
+	for _, v := range names {
+		result = append(result, SelectResponse{Value: v})
+	}
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Benefits rertived successfully",
@@ -135,12 +139,17 @@ func (c *ClinicController) GetBenefits(ctx *gin.Context) {
 // GetCity gets all city's names from NFZ (limit 20)
 func (c *ClinicController) GetCity(ctx *gin.Context) {
 	cityName := strings.ToUpper(ctx.Query("name"))
-	var SelectResponse []SelectResponse
-	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&SelectResponse)
+	var names []string
+	var result []SelectResponse
+
+	c.DB.Table("clinics").Select([]string{"city"}).Where("city LIKE ?", helpers.LikeStatement(cityName)).Limit(20).Find(&names)
+	for _, v := range names {
+		result = append(result, SelectResponse{Value: v})
+	}
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "City retrived successfully",
-		Data:    SelectResponse,
+		Data:    result,
 	})
 	return
 }
@@ -148,12 +157,17 @@ func (c *ClinicController) GetCity(ctx *gin.Context) {
 // GetPrivateName gets all privateNames (limit 20)
 func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
 	privateName := strings.ToUpper(ctx.Query("name"))
-	var SelectResponse []SelectResponse
-	c.DB.Table("clinics").Select([]string{"private_name"}).Where("private_name LIKE ?", privateName).Limit(20).Find(&SelectResponse)
+	var names []string
+	var result []SelectResponse
+
+	c.DB.Table("clinics").Select([]string{"private_name"}).Where("private_name LIKE ?", helpers.LikeStatement(privateName)).Limit(20).Find(&names)
+	for _, v := range names {
+		result = append(result, SelectResponse{Value: v})
+	}
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Private name rertived successfully",
-		Data:    SelectResponse,
+		Data:    result,
 	})
 	return
 }
@@ -161,12 +175,34 @@ func (c *ClinicController) GetPrivateName(ctx *gin.Context) {
 // GetStreet gets all streets from NFZ (limit 20)
 func (c *ClinicController) GetAddress(ctx *gin.Context) {
 	addressName := strings.ToUpper(ctx.Query("name"))
-	var SelectResponse []SelectResponse
-	c.DB.Table("clinics").Select([]string{"address"}).Where("address LIKE ?", helpers.LikeStatement(addressName)).Limit(20).Find(&SelectResponse)
+	var names []string
+	var result []SelectResponse
+
+	c.DB.Table("clinics").Select([]string{"address"}).Where("address LIKE ?", helpers.LikeStatement(addressName)).Limit(20).Find(&names)
+	for _, v := range names {
+		result = append(result, SelectResponse{Value: v})
+	}
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
 		Message: "Address rertived successfully",
-		Data:    SelectResponse,
+		Data:    result,
+	})
+	return
+}
+
+// Getvoivodeship gets all voivodeship from NFZ (limit 20)
+func (c *ClinicController) GetVoivodeship(ctx *gin.Context) {
+
+	var names = helpers.Voievodship
+	var result []SelectResponse
+
+	for index, _ := range names {
+		result = append(result, SelectResponse{Value: index})
+	}
+	ctx.JSON(http.StatusOK, helpers.Response{
+		Code:    200,
+		Message: "Voivodeship rertived successfully",
+		Data:    result,
 	})
 	return
 }

@@ -22,5 +22,6 @@ func ClinicRoutes(route *gin.Engine) {
 	search.GET("/city", ctrl.GetCity)
 	search.GET("/address", ctrl.GetAddress)
 	search.GET("/privateName", ctrl.GetPrivateName)
+	search.GET("/voivodeship", ctrl.GetVoivodeship)
 
 }
