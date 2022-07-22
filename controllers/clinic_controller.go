@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"fmt"
 	"gin-boilerplate/models"
 	"gin-boilerplate/pkg/helpers"
+	"gin-boilerplate/pkg/helpers/converter"
 	"gin-boilerplate/pkg/helpers/pagination"
 	http "net/http"
 	"strconv"
@@ -28,67 +28,28 @@ func (c *ClinicController) GetClinics(ctx *gin.Context) {
 
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	limitQuery, _ := strconv.Atoi(ctx.Query("limit"))
-	benefit := strings.ToUpper(ctx.Query("benefit"))
-	city := strings.ToUpper(ctx.Query("city"))
-	address := strings.ToUpper(ctx.Query("address"))
-	voivodeship := ctx.Query("voivodeship")
-	children := ctx.Query("benefits_for_children")
-	private_name := strings.ToUpper(ctx.Query("private_name"))
-
 	offset, limit := pagination.BuildPaginationQuery(int64(page), int64(limitQuery))
+	benefit := strings.ToUpper(ctx.Query("benefit"))
 
-	var benefits models.Benefit
+	var queryOptions = map[string]string{
+		"city":                  strings.ToUpper(ctx.Query("city")),
+		"address":               strings.ToUpper(ctx.Query("address")),
+		"voivodeship":           strings.ToUpper(ctx.Query("voivodeship")),
+		"benefits_for_children": ctx.Query("benefits_for_children"),
+		"private_name":          strings.ToUpper(ctx.Query("private_name")),
+	}
+
 	var result []helpers.ClinicInfoResponse
 	var paginationResponse *pagination.Result
+	var count int64
 
-	var query = map[string]string{
-		"city":         city,
-		"address":      address,
-		"voivodeship":  voivodeship,
-		"private_name": private_name,
-	}
-	values, where, whereBenefit := helpers.DynamicWhereLikeBuilder(query, "clinics")
+	sql := helpers.BuildQuery(queryOptions, benefit)
+	paginationSQL := helpers.BuildQueryWithPagination(sql, limit, offset)
 
-	fmt.Println(where)
-	fmt.Println(values...)
+	c.DB.Raw(paginationSQL).Scan(&result)
+	c.DB.Raw(sql).Count(&count)
 
-	if children == "true" {
-		where = append(where, "benefits_for_children = true")
-		whereBenefit = append(where, "clinics.benefits_for_children = true")
-	}
-
-	if where == nil && benefit == "" && (children == "" || children == "false") {
-		c.DB.Raw("SELECT * FROM clinics LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
-		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset}, "clinicsAll", result)
-
-	}
-
-	if benefit != "" {
-		rows := c.DB.Select("id,name").Where("name = ?", benefit).First(&benefits).RowsAffected
-		if rows == 0 {
-			ctx.JSON(http.StatusNotFound, helpers.Response{
-				Code:    404,
-				Message: "No benefit found with this name",
-				Data:    result,
-			})
-			return
-		}
-
-		bID := fmt.Sprintf("'%s'", benefits.ID)
-		if whereBenefit != nil {
-			c.DB.Raw("SELECT clinics.*, clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = "+bID+" AND "+strings.Join(whereBenefit, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
-			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: whereBenefit, BenefitID: bID}, "clinicsBenefits", result)
-		} else {
-			c.DB.Raw("SELECT clinics.*, clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = " + bID + " LIMIT " + fmt.Sprint(limit) + " OFFSET " + fmt.Sprint(offset)).Scan(&result)
-			paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, BenefitID: bID}, "clinicsBenefits", result)
-		}
-
-	}
-	if where != nil {
-		c.DB.Raw("SELECT * FROM clinics WHERE "+strings.Join(where, " AND ")+" LIMIT "+fmt.Sprint(limit)+" OFFSET "+fmt.Sprint(offset), values...).Scan(&result)
-		paginationResponse = pagination.PaginationResponseBuilder(c.DB, pagination.Param{Page: int64(page), Limit: limit, Offset: offset, Values: values, Where: where}, "clinicsWithWhere", result)
-
-	}
+	paginationResponse = pagination.PaginationResponseBuilder(pagination.Param{Page: int64(page), Limit: limit, Offset: offset}, result, count)
 
 	ctx.JSON(http.StatusOK, helpers.Response{
 		Code:    200,
@@ -196,7 +157,7 @@ func (c *ClinicController) GetAddress(ctx *gin.Context) {
 // Getvoivodeship gets all voivodeship from NFZ (limit 20)
 func (c *ClinicController) GetVoivodeship(ctx *gin.Context) {
 
-	var names = helpers.Voievodship
+	var names = converter.Voievodship
 	var result []SelectResponse
 
 	for index, _ := range names {

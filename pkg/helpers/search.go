@@ -1,25 +1,50 @@
 package helpers
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // LikeStatement adds % to search clause
 func LikeStatement(search string) string {
 	return search + "%"
 }
 
-// DynamicWhereBuilder builds dynamic where clause for search using queries
-func DynamicWhereLikeBuilder(query map[string]string, tableNameJoin string) ([]interface{}, []string, []string) {
-	var values []interface{}
-	var where []string
-	var whereJoin []string
+// BuildQueryWithPagination
+func BuildQueryWithPagination(sql string, limit, offset int64) string {
+	return fmt.Sprintf("%s LIMIT %d OFFSET %d", sql, limit, offset)
+}
 
-	for index, value := range query {
+// BuildQuery builcx query
+func BuildQuery(query map[string]string, benefit string) string {
+	var res string = "SELECT clinics.*"
+	var flag = false
+
+	if benefit != "" {
+		res += ", clinic_benefits.awaiting,clinic_benefits.visit_date,clinic_benefits.average_period FROM clinics FULL OUTER JOIN clinic_benefits on clinic_benefits.clinic_id = clinics.id WHERE clinic_benefits.benefit_id = (SELECT id FROM benefits WHERE name = " + "'" + benefit + "'" + ")"
+		flag = true
+	} else {
+		res += " FROM clinics"
+	}
+
+	for key, value := range query {
 		if value == "" {
 			continue
 		}
-		values = append(values, LikeStatement(value))
-		where = append(where, fmt.Sprintf("%s LIKE ?", index))
-		whereJoin = append(whereJoin, fmt.Sprintf("%s.%s LIKE ?", tableNameJoin, index))
+		if key == "benefits_for_children" {
+			res += decideAndOrWhere(&flag)
+			res += key + " = " + value
+		} else {
+			res += decideAndOrWhere(&flag)
+			res += key + " LIKE " + "'" + LikeStatement(value) + "'"
+		}
 	}
-	return values, where, whereJoin
+	return res
+}
+
+func decideAndOrWhere(flag *bool) string {
+	if *flag {
+		return " AND "
+	}
+	*flag = true
+	return " WHERE "
 }
